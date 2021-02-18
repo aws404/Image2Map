@@ -89,7 +89,7 @@ public class MapRenderer {
                         state.colors[sX + sY * 128] = palettedImage[y * 128 + sY][x * 128 + sX];
                     }
                 }
-                stack.setCustomName(new LiteralText("[" + x + ", " + y + "]"));
+                // stack.setCustomName(new LiteralText("[" + x + ", " + y + "]"));
                 giveMap(player, stack);
             }
         }
