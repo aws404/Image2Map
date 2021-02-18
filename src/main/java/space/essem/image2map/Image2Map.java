@@ -118,30 +118,32 @@ public class Image2Map implements ModInitializer {
         ServerCommandSource source = context.getSource();
         Vec3d pos = source.getPosition();
         PlayerEntity player = source.getPlayer();
-        DitherMode mode = null;
         String modeStr = StringArgumentType.getString(context, "mode");
-        final int countX = IntegerArgumentType.getInteger(context, "sizex");
-        final int countY = IntegerArgumentType.getInteger(context, "sizey");
         try {
-            mode = DitherMode.fromString(modeStr);
+            DitherMode mode = DitherMode.fromString(modeStr);
+            final int countX = IntegerArgumentType.getInteger(context, "sizex");
+            final int countY = IntegerArgumentType.getInteger(context, "sizey");
+            String input = StringArgumentType.getString(context, "path");
+
+            source.sendFeedback(new LiteralText("Generating image map..."), false);
+            BufferedImage image = getImage(input, source);
+            if (image == null)
+                return 0;
+            try {
+                new Thread(() -> {
+                    MapRenderer.render(image, mode, source.getWorld(), pos, countX, countY, player);
+                    source.sendFeedback(new LiteralText("Done!"), false);
+                }).start();
+                source.sendFeedback(new LiteralText("Map Creation Queued!"), false);
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+
+            return 1;
         } catch (IllegalArgumentException e) {
             throw new SimpleCommandExceptionType(() -> "Invalid dither mode '" + modeStr + "'").create();
         }
-        String input = StringArgumentType.getString(context, "path");
-
-        source.sendFeedback(new LiteralText("Generating image map..."), false);
-        BufferedImage image = getImage(input, source);
-        if (image == null)
-            return 0;
-        try {
-            MapRenderer.render(image, mode, source.getWorld(), pos, countX, countY, player);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw e;
-        }
-        source.sendFeedback(new LiteralText("Done!"), false);
-
-        return 1;
     }
 
     @Nullable
