@@ -15,6 +15,7 @@ import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.map.MapState;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.LiteralText;
 import net.minecraft.util.math.Vec3d;
 
 import static space.essem.image2map.Image2Map.DitherMode;
@@ -88,6 +89,7 @@ public class MapRenderer {
                         state.colors[sX + sY * 128] = palettedImage[y * 128 + sY][x * 128 + sX];
                     }
                 }
+                stack.setCustomName(new LiteralText("[" + x + ", " + y + "]"));
                 giveMap(player, stack);
             }
         }
