@@ -69,6 +69,7 @@ public class Image2Map implements ModInitializer {
                 SuggestionsBuilder builder) throws CommandSyntaxException {
             builder.suggest("none");
             builder.suggest("dither");
+            builder.suggest("ordered");
             return builder.buildFuture();
         }
         
@@ -76,13 +77,16 @@ public class Image2Map implements ModInitializer {
 
     public enum DitherMode {
         NONE,
-        FLOYD;
+        FLOYD,
+        ORDERED;
 
         public static DitherMode fromString(String string) {
             if (string.equalsIgnoreCase("NONE"))
                 return DitherMode.NONE;
             else if (string.equalsIgnoreCase("DITHER") || string.equalsIgnoreCase("FLOYD"))
                     return DitherMode.FLOYD;
+            else if (string.equalsIgnoreCase("ORDERED"))
+                    return DitherMode.ORDERED;
             throw new IllegalArgumentException("invalid dither mode");
         }
     }
@@ -104,7 +108,7 @@ public class Image2Map implements ModInitializer {
         BufferedImage image = getImage(input, source);
         
         
-        createAndGiveMap(source, pos, player, mode, image);
+        MapRenderer.render(image, mode, source.getWorld(), pos, 1, 1, player);
         source.sendFeedback(new LiteralText("Done!"), false);
 
         return 1;
@@ -129,14 +133,11 @@ public class Image2Map implements ModInitializer {
         BufferedImage image = getImage(input, source);
         if (image == null)
             return 0;
-        
-        int sectionWidth = image.getWidth() / countX;
-        int sectionHeight = image.getHeight() / countY;
-        for (int y = 0; y < countY; y++) {
-            for (int x = 0; x < countX; x++) {
-                BufferedImage subImage = image.getSubimage(x * sectionWidth, y * sectionHeight, sectionWidth, sectionHeight);
-                createAndGiveMap(source, pos, player, mode, subImage);
-            }
+        try {
+            MapRenderer.render(image, mode, source.getWorld(), pos, countX, countY, player);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
         source.sendFeedback(new LiteralText("Done!"), false);
 
@@ -171,16 +172,6 @@ public class Image2Map implements ModInitializer {
         return image;
     }
 
-    private void createAndGiveMap(ServerCommandSource source, Vec3d pos, PlayerEntity player, DitherMode mode,
-            BufferedImage image) {
-        ItemStack stack = MapRenderer.render(image, mode, source.getWorld(), pos.x, pos.z, player);
-
-        if (!player.inventory.insertStack(stack)) {
-            ItemEntity itemEntity = new ItemEntity(player.world, player.getPos().x, player.getPos().y,
-                    player.getPos().z, stack);
-            player.world.spawnEntity(itemEntity);
-        }
-    }
 
 
 
