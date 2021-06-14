@@ -43,7 +43,7 @@ public class Image2Map implements ModInitializer {
     public static Image2MapConfig CONFIG = AutoConfig.register(Image2MapConfig.class, GsonConfigSerializer::new)
             .getConfig();
 
-    private static final SuggestionProvider<ServerCommandSource> DITHER_SUGGEST_PROVIDER = SuggestionProviders.register(new Identifier("spell_names"), (commandContext, suggestionsBuilder) -> CommandSource.suggestMatching(Arrays.stream(DitherMode.values()).map(Enum::name), suggestionsBuilder));
+    private static final SuggestionProvider<ServerCommandSource> DITHER_SUGGEST_PROVIDER = SuggestionProviders.register(new Identifier("dither_types"), (commandContext, suggestionsBuilder) -> CommandSource.suggestMatching(Arrays.stream(DitherMode.values()).map(Enum::name), suggestionsBuilder));
 
     @Override
     public void onInitialize() {
