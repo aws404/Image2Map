@@ -8,17 +8,18 @@ import java.awt.image.DataBufferByte;
 import java.util.Arrays;
 import java.util.Objects;
 
-import net.minecraft.block.MaterialColor;
+import net.minecraft.block.MapColor;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.map.MapState;
 import net.minecraft.server.world.ServerWorld;
+import space.essem.image2map.mixin.MapStateAccessor;
 
 import static space.essem.image2map.Image2Map.DitherMode;
 
 public class MapRenderer {
-    private static final double shadeCoeffs[] = { 0.71, 0.86, 1.0, 0.53 };
+    private static final double[] SHADE_COEFFS = { 0.71, 0.86, 1.0, 0.53 };
 
     private static double distance(double[] vectorA, double[] vectorB) {
         return Math.sqrt(Math.pow(vectorA[0] - vectorB[0], 2) + Math.pow(vectorA[1] - vectorB[1], 2)
@@ -26,23 +27,23 @@ public class MapRenderer {
     }
 
     private static double[] applyShade(double[] color, int ind) {
-        double coeff = shadeCoeffs[ind];
+        double coeff = SHADE_COEFFS[ind];
         return new double[] { color[0] * coeff, color[1] * coeff, color[2] * coeff };
     }
 
-    public static ItemStack render(BufferedImage image, DitherMode mode, ServerWorld world, double x, double z,
-            PlayerEntity player) {
+    public static ItemStack render(BufferedImage image, DitherMode mode, ServerWorld world, double x, double z, PlayerEntity player) {
         ItemStack stack = FilledMapItem.createMap(world, (int) x, (int) z, (byte) 3, false, false);
-        MapState state = FilledMapItem.getMapState(stack, world);
-        state.locked = true;
+        MapState state = FilledMapItem.getOrCreateMapState(stack, world);
+        ((MapStateAccessor) state).setLocked(true);
+
         Image resizedImage = image.getScaledInstance(128, 128, Image.SCALE_DEFAULT);
         BufferedImage resized = convertToBufferedImage(resizedImage);
         int width = resized.getWidth();
         int height = resized.getHeight();
         int[][] pixels = convertPixelArray(resized);
-        MaterialColor[] mapColors = MaterialColor.COLORS;
+        MapColor[] mapColors = MapColor.COLORS;
         Color imageColor;
-        mapColors = Arrays.stream(mapColors).filter(Objects::nonNull).toArray(MaterialColor[]::new);
+        mapColors = Arrays.stream(mapColors).filter(Objects::nonNull).toArray(MapColor[]::new);
 
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
@@ -55,14 +56,14 @@ public class MapRenderer {
         }
         return stack;
     }
-    private static Color mapColorToRGBColor(MaterialColor[] colors, int color) {
+    private static Color mapColorToRGBColor(MapColor[] colors, int color) {
         Color mcColor = new Color(colors[color >> 2].color);
         double[] mcColorVec = { 
             (double) mcColor.getRed(), 
             (double) mcColor.getGreen(),
             (double) mcColor.getBlue()
         };
-        double coeff = shadeCoeffs[color & 3];
+        double coeff = SHADE_COEFFS[color & 3];
         return new Color((int)(mcColorVec[0] * coeff), (int)(mcColorVec[1] * coeff), (int)(mcColorVec[2] * coeff));
     }
 
@@ -76,7 +77,7 @@ public class MapRenderer {
             this.b = b;
         }
     }
-    private static int floydDither(MaterialColor[] mapColors, int[][] pixels, int x, int y, Color imageColor) {
+    private static int floydDither(MapColor[] mapColors, int[][] pixels, int x, int y, Color imageColor) {
         // double[] imageVec = { (double) imageColor.getRed() / 255.0, (double) imageColor.getGreen() / 255.0,
         //         (double) imageColor.getBlue() / 255.0 };
         int colorIndex = nearestColor(mapColors, imageColor);
@@ -122,7 +123,7 @@ public class MapRenderer {
         return i;
     }
 
-    private static int nearestColor(MaterialColor[] colors, Color imageColor) {
+    private static int nearestColor(MapColor[] colors, Color imageColor) {
         double[] imageVec = { (double) imageColor.getRed() / 255.0, (double) imageColor.getGreen() / 255.0,
                 (double) imageColor.getBlue() / 255.0 };
         int best_color = 0;
@@ -131,7 +132,7 @@ public class MapRenderer {
             Color mcColor = new Color(colors[k].color);
             double[] mcColorVec = { (double) mcColor.getRed() / 255.0, (double) mcColor.getGreen() / 255.0,
                     (double) mcColor.getBlue() / 255.0 };
-            for (int shadeInd = 0; shadeInd < shadeCoeffs.length; shadeInd++) {
+            for (int shadeInd = 0; shadeInd < SHADE_COEFFS.length; shadeInd++) {
                 double distance = distance(imageVec, applyShade(mcColorVec, shadeInd));
                 if (distance < lowest_distance) {
                     lowest_distance = distance;
@@ -139,7 +140,7 @@ public class MapRenderer {
                     if (k == 0 && imageColor.getAlpha() == 255) {
                         best_color = 119;
                     } else {
-                        best_color = k * shadeCoeffs.length + shadeInd;
+                        best_color = k * SHADE_COEFFS.length + shadeInd;
                     }
                 }
             }

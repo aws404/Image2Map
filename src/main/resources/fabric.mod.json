@@ -8,6 +8,10 @@
   "authors": [
     "Essem"
   ],
+  "contributors": [
+    "Setadokalo",
+    "aws404"
+  ],
   "contact": {
     "homepage": "https://essem.space/",
     "sources": "https://github.com/TheEssem/Image2Map"
@@ -23,11 +27,14 @@
     ]
   },
 
+  "mixins": [
+    "imagetwomap.mixins.json"
+  ],
+
   "depends": {
-    "fabricloader": ">=0.7.4",
-    "fabric": "*"
-  },
-  "suggests": {
-    "minecraft": "1.16.x"
+    "fabricloader": ">=0.11.3",
+    "fabric": "*",
+    "minecraft": "1.17.x",
+    "java": ">=16"
   }
 }

@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "space.essem.image2map.mixin",
+  "compatibilityLevel": "JAVA_16",
+  "mixins": [
+    "MapStateAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

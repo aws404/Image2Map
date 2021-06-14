@@ -1,6 +1,13 @@
 package space.essem.image2map;
 
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.suggestion.SuggestionProviders;
+import net.minecraft.util.Identifier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import space.essem.image2map.config.Image2MapConfig;
 import space.essem.image2map.renderer.MapRenderer;
 
@@ -8,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
 import javax.imageio.ImageIO;
@@ -21,8 +29,6 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
-import me.sargunvohra.mcmods.autoconfig1u.AutoConfig;
-import me.sargunvohra.mcmods.autoconfig1u.serializer.GsonConfigSerializer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.LiteralText;
@@ -33,32 +39,23 @@ import net.minecraft.util.math.Vec3d;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 
 public class Image2Map implements ModInitializer {
+    public static final Logger LOGGER = LogManager.getLogger();
     public static Image2MapConfig CONFIG = AutoConfig.register(Image2MapConfig.class, GsonConfigSerializer::new)
             .getConfig();
 
+    private static final SuggestionProvider<ServerCommandSource> DITHER_SUGGEST_PROVIDER = SuggestionProviders.register(new Identifier("spell_names"), (commandContext, suggestionsBuilder) -> CommandSource.suggestMatching(Arrays.stream(DitherMode.values()).map(Enum::name), suggestionsBuilder));
+
     @Override
     public void onInitialize() {
-        System.out.println("Loading Image2Map...");
+        LOGGER.info("Loading Image2Map...");
 
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
             dispatcher.register(CommandManager.literal("mapcreate")
                     .requires(source -> source.hasPermissionLevel(CONFIG.minPermLevel))
-                    .then(CommandManager.argument("mode", StringArgumentType.word()).suggests(new DitherModeSuggestionProvider())
+                    .then(CommandManager.argument("mode", StringArgumentType.word()).suggests(DITHER_SUGGEST_PROVIDER)
                             .then(CommandManager.argument("path", StringArgumentType.greedyString())
                                     .executes(this::createMap))));
         });
-    }
-
-    class DitherModeSuggestionProvider implements SuggestionProvider<ServerCommandSource> {
-
-        @Override
-        public CompletableFuture<Suggestions> getSuggestions(CommandContext<ServerCommandSource> context,
-                SuggestionsBuilder builder) throws CommandSyntaxException {
-            builder.suggest("none");
-            builder.suggest("dither");
-            return builder.buildFuture();
-        }
-        
     }
 
     public enum DitherMode {
@@ -78,7 +75,7 @@ public class Image2Map implements ModInitializer {
         ServerCommandSource source = context.getSource();
         Vec3d pos = source.getPosition();
         PlayerEntity player = source.getPlayer();
-        DitherMode mode = null;
+        DitherMode mode;
         String modeStr = StringArgumentType.getString(context, "mode");
         try {
             mode = DitherMode.fromString(modeStr);
@@ -115,7 +112,7 @@ public class Image2Map implements ModInitializer {
         ItemStack stack = MapRenderer.render(image, mode, source.getWorld(), pos.x, pos.z, player);
 
         source.sendFeedback(new LiteralText("Done!"), false);
-        if (!player.inventory.insertStack(stack)) {
+        if (!player.getInventory().insertStack(stack)) {
             ItemEntity itemEntity = new ItemEntity(player.world, player.getPos().x, player.getPos().y,
                     player.getPos().z, stack);
             player.world.spawnEntity(itemEntity);
@@ -123,8 +120,6 @@ public class Image2Map implements ModInitializer {
 
         return 1;
     }
-
-
 
     private static boolean isValid(String url) {
         try {
