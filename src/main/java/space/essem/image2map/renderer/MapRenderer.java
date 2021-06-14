@@ -8,6 +8,7 @@ import java.awt.image.DataBufferByte;
 import java.util.Arrays;
 import java.util.Objects;
 
+import net.minecraft.block.MapColor;
 import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.map.MapState;
@@ -29,7 +30,7 @@ public class MapRenderer {
         return new double[] { color[0] * coeff, color[1] * coeff, color[2] * coeff };
     }
 
-    public static ItemStack render(BufferedImage image, DitherMode mode, ServerWorld world, double x, double z, PlayerEntity player) {
+    public static ItemStack render(BufferedImage image, DitherMode mode, ServerWorld world, double x, double z) {
         ItemStack stack = FilledMapItem.createMap(world, (int) x, (int) z, (byte) 3, false, false);
         MapState state = FilledMapItem.getOrCreateMapState(stack, world);
         ((MapStateAccessor) state).setLocked(true);
@@ -53,15 +54,17 @@ public class MapRenderer {
         }
         return stack;
     }
+
     private static Color mapColorToRGBColor(MapColor[] colors, int color) {
         Color mcColor = new Color(colors[color >> 2].color);
-        double[] mcColorVec = { 
-            (double) mcColor.getRed(), 
-            (double) mcColor.getGreen(),
-            (double) mcColor.getBlue()
+        double[] mcColorVec = {
+                (double) mcColor.getRed(),
+                (double) mcColor.getGreen(),
+                (double) mcColor.getBlue()
         };
         double coeff = SHADE_COEFFS[color & 3];
-        return new Color((int)(mcColorVec[0] * coeff), (int)(mcColorVec[1] * coeff), (int)(mcColorVec[2] * coeff));
+        return new Color((int) (mcColorVec[0] * coeff), (int) (mcColorVec[1] * coeff), (int) (mcColorVec[2] * coeff));
+    }
 
     private static class NegatableColor {
         public final int r;

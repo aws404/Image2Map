@@ -4,7 +4,8 @@
 	"package": "space.essem.image2map.mixin",
 	"compatibilityLevel": "JAVA_8",
 	"mixins": [
-		"ItemFrameMixin"
+		"ItemFrameMixin",
+		"MapStateAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1,
