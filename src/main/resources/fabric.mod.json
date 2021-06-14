@@ -28,7 +28,7 @@
   },
 
   "mixins": [
-    "imagetwomap.mixins.json"
+    "image2map.mixins.json"
   ],
 
   "depends": {
