@@ -6,7 +6,7 @@ A Fabric mod that allows you to render an image onto a map. Inspired by the Bukk
 
 To render an image, just run this command like so:
 ```
-/mapcreate <path to image URL>
+/mapcreate <FLOYD/DITHER> <path to image URL>
 ```
 
 ## Build
